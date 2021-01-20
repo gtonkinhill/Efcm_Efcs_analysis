@@ -1,1 +1,1 @@
-# Efcm_Efcs_analysis
+# Supplementary material for the manuscript 'Apparent nosocomial adaptation of *Enterococcus faecalis* predates the modern hospital era'
