@@ -28,15 +28,15 @@ library(ape)
 Load data
 
 ```{r}
-Efaecalis_pa <- fread("./E_faecalis_panaroo/gene_presence_absence.Rtab", data.table = FALSE) %>% as_tibble()
+Efaecalis_pa <- fread("./E_faecalis_panaroo/gene_presence_absence.Rtab.gz", data.table = FALSE) %>% as_tibble()
 Efaecalis_pa_matrix <- data.matrix(Efaecalis_pa[,2:ncol(Efaecalis_pa)])
 rownames(Efaecalis_pa_matrix) <- Efaecalis_pa$Gene
-Efaecalis_meta <- fread("./E_faecalis_panaroo/metadata_E_faecalis.csv", data.table = FALSE) %>% as_tibble()
+Efaecalis_meta <- fread("./E_faecalis_panaroo/metadata_E_faecalis.csv.gz", data.table = FALSE) %>% as_tibble()
 
-Efcm_pa <- fread("./Efcm_panaroo/gene_presence_absence.Rtab", data.table = FALSE)
+Efcm_pa <- fread("./Efcm_panaroo/gene_presence_absence.Rtab.gz", data.table = FALSE)
 Efcm_pa_matrix <- data.matrix(Efcm_pa[,2:ncol(Efcm_pa)])
 rownames(Efcm_pa_matrix) <- Efcm_pa$Gene
-Efcm_meta <- fread("./Efcm_panaroo/metadata_Efcm.csv", data.table = FALSE)
+Efcm_meta <- fread("./Efcm_panaroo/metadata_Efcm.csv.gz", data.table = FALSE)
 ```
 
 Generate within species gene composition distance matrices
@@ -65,7 +65,7 @@ diag(sparse_Efaecalis_sim) <- 0
 g <- graph.adjacency(sparse_Efaecalis_sim, weighted = TRUE)
 edges <- cbind(igraph::get.edgelist(g), igraph::get.edge.attribute(g)$weight)
 
-fwrite(edges, file = "Efaecalis_edges.csv", sep=",", quote = FALSE)
+fwrite(edges, file = "Efaecalis_edges.csv.gz", sep=",", quote = FALSE)
 ```
 
 ```{r}
@@ -78,25 +78,23 @@ diag(sparse_Efcm_sim) <- 0
 g <- graph.adjacency(sparse_Efcm_sim, weighted = TRUE)
 edges <- cbind(igraph::get.edgelist(g), igraph::get.edge.attribute(g)$weight)
 
-fwrite(edges, file = "Efcm_edges.csv", sep=",", quote = FALSE)
+fwrite(edges, file = "Efcm_edges.csv.gz", sep=",", quote = FALSE)
 ```
 
 ##Additional analyses
 
-A second point that seems ambiguous if not incorrect, is the interpretation of the study that examined the origins of the genus Enterococcus. Lines 93 – 96 seem to suggest it was a study of MDR hospital isolates of E. faecalis and E. faecium. This reviewer’s understanding is that a wide representation of enterococcal species were studied, including commensal and clinical representatives of E. faecalis and E. faecium, and the survival traits that positioned select lineages of those species to emerge as potential pathogens capable of endemic residence and spread within hospitals were common to all or nearly all enterococci. This becomes important in understanding the later reference to the origin of HA clusters (lines 377 – 393). The prediction from that previous report would be that the traits that favor survival in harsh environments present in all or nearly all enterococcal species, would not be those that would lead to the genesis of new sequence types associated with
-hospital endemnicity, but would be necessary precursors very likely also associated with their generalist success in many hosts as observed decades ago by Mundt and others. That is, sequence types related to those found now in hospitals should be represented in older collections, and might even be enriched among lineages to which humans are most frequently exposed to. The data presented doesn’t seem to change that view. Some global assessments of gene content between the common hospital clusters observed here and elsewhere are made, but a rigorous comparison of specific gene content between these lineages and commensal isolates from the community is not clearly laid out.
+Additional analysis to respond to reviewers comments.
 
+Association analysis between gene presence absence and hospitilisation isolates
 
 ```{r}
-?Chisquare
-
 keep <- Efaecalis_meta$ID2[Efaecalis_meta$Source %in% c("Non-hospitalized person", "Hospitalized patient")]
 keepID1 <- Efaecalis_meta$ID[Efaecalis_meta$Source %in% c("Non-hospitalized person", "Hospitalized patient")]
 Efaecalis_pa_df <- as_tibble(Efaecalis_pa_matrix[, colnames(Efaecalis_pa_matrix) %in% keep]) %>% 
   add_column(Gene=rownames(Efaecalis_pa_matrix), .before = 1)
 category <- Efaecalis_meta$Source[match(colnames(Efaecalis_pa_df)[2:ncol(Efaecalis_pa_df)], Efaecalis_meta$ID2)]
-names(category) <- colnames(Efaecalis_pa_df)[2:ncol(Efaecalis_pa_df)]
 colnames(Efaecalis_pa_df) <- gsub('.velvet','', colnames(Efaecalis_pa_df))
+names(category) <- colnames(Efaecalis_pa_df)[2:ncol(Efaecalis_pa_df)]
 
 raxml_tree <- ape::read.tree("./RAxML_bestTree.ml_E07132_raxml")
 raxml_tree <- drop.tip(raxml_tree, tip = raxml_tree$tip.label[!raxml_tree$tip.label %in% keepID1])
@@ -136,6 +134,8 @@ fwrite(sig_results, 'hospital_vs_nonhospital_pa_analysis.csv', sep=',')
 table(sig_results$estimate<0)
 data.table(sig_results)
 ```
+
+Generate a Venn diagram
 
 ```{r}
 library(VennDiagram)
@@ -180,6 +180,5 @@ venn.diagram(
         cat.dist = c(0.055, 0.055)
 )
 ```
-
 
 
